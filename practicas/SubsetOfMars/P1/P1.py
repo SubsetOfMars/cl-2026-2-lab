@@ -18,13 +18,29 @@
 #
 
 # %% [markdown]
-# # Fonética
+# ### Importación de librerías
 
 # %%
+# manejo de datos
+import pandas as pd
+
+# descarga de datos
+import requests
+
+# expresiones regulares
+import re
+
+# visualización
+import matplotlib.pyplot as plt
+
+# utilidades
 from collections import defaultdict
 
-import pandas as pd
-import requests
+# %% [markdown]
+# # 1. Fonética
+
+# %% [markdown]
+# ### 1.1 Descarga del diccionario IPA
 
 # %%
 IPA_URL = "https://raw.githubusercontent.com/open-dict-data/ipa-dict/master/data/{lang}.txt"
@@ -35,9 +51,15 @@ response = requests.get(IPA_URL.format(lang="es_MX"))
 # %%
 ipa_list = response.text.split("\n")
 
+# %% [markdown]
+# ### 1.2 Exploración del corpus
+
 # %%
 ipa_list[0].split("\t")
 
+
+# %% [markdown]
+# ### 1.3 Función para descargar el diccionario fonético
 
 # %%
 def download_ipa_corpus(iso_lang: str) -> str:
@@ -54,6 +76,9 @@ def download_ipa_corpus(iso_lang: str) -> str:
     
     return response.text
 
+
+# %% [markdown]
+# ### 1.4 Procesamiento del diccionario IPA
 
 # %%
 def parse_response(response: str) -> dict:
@@ -77,9 +102,15 @@ def parse_response(response: str) -> dict:
     return result
 
 
+# %% [markdown]
+# ### 1.5 Construcción del diccionario fonético
+
 # %%
 es_data = parse_response(download_ipa_corpus("es_MX"))
 
+
+# %% [markdown]
+# ### 1.6 Consulta de transcripciones fonéticas
 
 # %%
 def get_ipa_transcriptions(word: str, dataset: dict) -> list[str]:
@@ -93,6 +124,9 @@ def get_ipa_transcriptions(word: str, dataset: dict) -> list[str]:
 # %%
 get_ipa_transcriptions("mayonesa", es_data)
 
+
+# %% [markdown]
+# ### 1.7 Distancia de Levenshtein
 
 # %%
 def levenshtein(s1: str, s2: str) -> int:
@@ -125,6 +159,9 @@ def levenshtein(s1: str, s2: str) -> int:
     return dp[m][n]
 
 
+# %% [markdown]
+# ### 1.8 Búsqueda de la palabra más cercana
+
 # %%
 def encontrar_palabra_mas_cercana(palabra: str, dataset: dict) -> str:
     """
@@ -143,6 +180,9 @@ def encontrar_palabra_mas_cercana(palabra: str, dataset: dict) -> str:
 
     return palabra_mas_cercana
 
+
+# %% [markdown]
+# ### 1.9 Obtención de transcripción aproximada
 
 # %%
 def obtener_ipa_aproximado(palabra: str, dataset: dict) -> dict:
@@ -175,21 +215,20 @@ def obtener_ipa_aproximado(palabra: str, dataset: dict) -> dict:
 # %%
 from pprint import pprint
 
+# %% [markdown]
+# ### 1.10 Pruebas de búsqueda fonética aproximada
+
 # %%
 print(obtener_ipa_aproximado("tomate", es_data))
+print(obtener_ipa_aproximado("ahua", es_data))
 print(obtener_ipa_aproximado("cassa", es_data))
 print(obtener_ipa_aproximado("cucharacha", es_data))
 
 # %% [markdown]
-# # Morfología
+# # 2. Morfología
 
-# %%
-import re
-from collections import defaultdict
-
-import matplotlib.pyplot as plt
-import pandas as pd
-import requests as r
+# %% [markdown]
+# ### 2.1 Configuración del corpus morfológico
 
 # %%
 # Lenguas disponibles en el corpus
@@ -217,6 +256,9 @@ CATEGORIES = {
 }
 
 
+# %% [markdown]
+# ### 2.2 Generación de nombres de archivos del corpus
+
 # %%
 def get_track_files(lang: str, track: str = "word") -> list[str]:
     """
@@ -242,6 +284,9 @@ def get_track_files(lang: str, track: str = "word") -> list[str]:
         f"{lang}.{track}.dev",
     ]
 
+
+# %% [markdown]
+# ### 2.3 Descarga del corpus morfológico
 
 # %%
 def get_raw_corpus(files: list) -> list:
@@ -273,6 +318,9 @@ def get_raw_corpus(files: list) -> list:
 
     return result
 
+
+# %% [markdown]
+# ### 2.4 Conversión del corpus a DataFrame
 
 # %%
 def raw_corpus_to_dataframe(corpus_list: list, lang: str) -> pd.DataFrame:
@@ -310,6 +358,9 @@ def raw_corpus_to_dataframe(corpus_list: list, lang: str) -> pd.DataFrame:
     return df
 
 
+# %% [markdown]
+# ### 2.5 Construcción del dataset morfológico
+
 # %%
 # Lenguas que analizaremos
 langs = ["spa", "rus", "hun"]
@@ -330,11 +381,17 @@ df_all = pd.concat(dfs)
 
 df_all.head()
 
+# %% [markdown]
+# ### 2.6 Análisis del ratio morfemas/palabra
+
 # %%
 ratio = df_all.groupby("lang")["morph_count"].mean()
 
 print("Ratio morfemas/palabra:")
 print(ratio)
+
+# %% [markdown]
+# ### 2.7 Porcentaje de flexión por idioma
 
 # %%
 inflection = (df_all["category"] == "100").groupby(df_all["lang"]).mean()
@@ -342,11 +399,17 @@ inflection = (df_all["category"] == "100").groupby(df_all["lang"]).mean()
 print("Porcentaje de flexión (100):")
 print(inflection)
 
+# %% [markdown]
+# ### 2.8 Porcentaje de derivación por idioma
+
 # %%
 derivation = (df_all["category"] == "010").groupby(df_all["lang"]).mean()
 
 print("Porcentaje de derivación (010):")
 print(derivation)
+
+# %% [markdown]
+# ### 2.9 Visualización de la distribución morfológica
 
 # %%
 fig, axes = plt.subplots(1, 2, figsize=(14,5))
@@ -374,7 +437,38 @@ plt.tight_layout()
 plt.show()
 
 # %% [markdown]
-# ## Análisis 
+# ## 3. Análisis 
+#
+# <div style="text-align: justify;">
+# Para comparar el comportamiento morfológico de las lenguas analizadas se utilizaron dos tipos de evidencia: 
+# (1) el promedio de morfemas por palabra y 
+# (2) la distribución de las categorías morfológicas.
+#
+# El promedio de morfemas por palabra es una medida aproximada de la complejidad morfológica. 
+#
+# Cuando una lengua presenta palabras compuestas por varios morfemas segmentables, esto sugiere un sistema morfológico más productivo. 
+# En cambio, cuando las palabras tienden a estar formadas por uno o pocos morfemas, la morfología es menos segmentable y la lengua se acerca más al extremo aislante.
+#
+# Los resultados muestran que el húngaro presenta el mayor número promedio de morfemas por palabra. 
+# Este comportamiento es consistente con su clasificación tipológica como lengua aglutinante. 
+# En las lenguas aglutinantes las palabras se construyen mediante la concatenación de múltiples morfemas, cada uno de los cuales suele expresar una función gramatical relativamente clara y separable.
+#
+# En contraste, el español y el ruso presentan un número menor de morfemas por palabra. 
+# Ambas lenguas son tradicionalmente clasificadas como lenguas fusionales. 
+# En este tipo de lenguas un solo morfema puede expresar simultáneamente varias categorías gramaticales (por ejemplo persona, número y tiempo en una terminación verbal), lo que reduce la cantidad de segmentos morfológicos claramente identificables.
+#
+# Las visualizaciones apoyan esta interpretación. 
+# La distribución del número de morfemas muestra que en húngaro aparecen con mayor frecuencia palabras compuestas por varios morfemas, mientras que en español y ruso predominan palabras con menos segmentos morfológicos. 
+# Esto refleja diferencias estructurales en la forma en que cada lengua codifica la información gramatical.
+# </div>
 
 # %% [markdown]
-# ## Conclusión
+# ## 4. Conclusión
+#
+# <div style="text-align: justify;">
+# Los resultados obtenidos muestran diferencias claras en la estructura morfológica de las lenguas analizadas. El húngaro presenta el mayor promedio de morfemas por palabra y una mayor frecuencia de palabras con múltiples segmentos morfológicos. Esto indica que su morfología tiende a organizar la información gramatical mediante la concatenación de varios morfemas dentro de una misma palabra.
+# <br><br>
+# En contraste, el español y el ruso presentan valores más bajos en el promedio de morfemas por palabra y una distribución más concentrada en palabras con pocos morfemas. Esto sugiere que, dentro del conjunto analizado, ambas lenguas se comportan de manera menos segmentada que el húngaro.
+#
+# Por lo tanto, de las tres lenguas estudiadas, el húngaro es la que se aproxima más al comportamiento esperado de una lengua aglutinante, mientras que el español y el ruso se sitúan más lejos de ese patrón.
+# </div>
