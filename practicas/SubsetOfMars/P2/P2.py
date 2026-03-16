@@ -336,3 +336,17 @@ plt.legend()
 
 #muestra la gráfica
 plt.show()
+
+# %% [markdown]
+# ### 1.3 Análisis
+
+# %% [markdown]
+# <div style="text-align: justify;">
+#
+# En el caso del lenguaje artificial, el texto fue generado seleccionando caracteres al azar de un alfabeto definido que incluía letras y espacios. Aunque este procedimiento permitió construir un corpus con “palabras” de longitudes variables, dichas palabras no provienen de una lengua natural y no están organizadas por factores semánticos, sintácticos ni por la forma en que un texto real desarrolla y repite temas, ideas o ciertas palabras a lo largo del discurso. Por esta razón, aunque la gráfica de rango contra frecuencia mostró una tendencia decreciente, el ajuste a la ley de Zipf no fue tan natural como en un corpus lingüístico real.
+#
+# En cambio, en el corpus de maya yucateco sí se observó un comportamiento más cercano al esperado por la ley de Zipf. La gráfica en escala logarítmica mostró una tendencia aproximadamente lineal, lo cual es característico de este tipo de distribuciones. Además, el valor estimado del parámetro $\alpha$ fue aproximadamente $0.80$, que se encuentra en un rango razonable para una distribución de tipo Zipf. Esto sugiere que, a pesar de tratarse de una lengua de bajos recursos digitales y de trabajar con un corpus relativamente limitado, la distribución de frecuencias de sus palabras conserva regularidades estadísticas semejantes a las observadas en otras lenguas naturales.
+#
+# Al comparar ambos casos, se puede concluir que la ley de Zipf se aproxima mejor en el corpus de maya yucateco que en el lenguaje artificial. Esto tiene sentido porque las lenguas naturales no distribuyen sus palabras de manera aleatoria, mientras que en el lenguaje artificial la distribución depende únicamente del azar con el que se generaron los caracteres.
+#
+# </div>
