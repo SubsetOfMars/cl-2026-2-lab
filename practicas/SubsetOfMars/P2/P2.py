@@ -350,3 +350,202 @@ plt.show()
 # Al comparar ambos casos, se puede concluir que la ley de Zipf se aproxima mejor en el corpus de maya yucateco que en el lenguaje artificial. Esto tiene sentido porque las lenguas naturales no distribuyen sus palabras de manera aleatoria, mientras que en el lenguaje artificial la distribución depende únicamente del azar con el que se generaron los caracteres.
 #
 # </div>
+
+# %% [markdown]
+# ## 2. Diversidad lingüística en México
+
+# %% [markdown]
+# ### 2.1 México
+
+# %%
+#importa os para manejar rutas de archivos
+import os
+
+#importa pandas para leer los csv
+import pandas as pd
+
+# %%
+#directorio de datos de Glottolog
+DATA_PATH = "data"
+DATA_PATH = "data"
+LANG_GEO_FILE = "languages_and_dialects_geo.csv"
+LANGUOID_FILE = "languoid.csv"
+
+# %%
+#carga el archivo con coordenadas geográficas de lenguas y dialectos
+languages = pd.read_csv(os.path.join(DATA_PATH, LANG_GEO_FILE))
+
+#carga el archivo con la información genealógica de glottolog
+languoids = pd.read_csv(os.path.join(DATA_PATH, LANGUOID_FILE))
+
+# %%
+#revisa las primeras filas del archivo de coordenadas
+languages.head()
+
+# %%
+#revisa las primeras filas del archivo genealógico
+languoids.head()
+
+# %%
+#coordenadas aproximadas de México
+min_lat = 14.5
+max_lat = 32.7
+min_long = -118.4
+max_long = -86.8
+
+#filtra las lenguas que caen dentro de la región geográfica de México
+mexico_languages = languages[
+    (languages["latitude"] >= min_lat)
+    & (languages["latitude"] <= max_lat)
+    & (languages["longitude"] >= min_long)
+    & (languages["longitude"] <= max_long)
+]
+
+# %%
+#convierte el dataframe de languoids en diccionario para buscar nodos más fácil
+languoids_dict = languoids.set_index("id").to_dict("index")
+
+
+# %%
+#reconstruye el árbol genealógico desde una lengua hasta su familia raíz
+def reconstruir_linaje(glottocode):
+    linaje = []
+    current_id = glottocode
+
+    #mientras el id exista y no sea nulo
+    while pd.notna(current_id) and current_id in languoids_dict:
+        nodo = languoids_dict[current_id]
+
+        #filtra lenguas artificiales o no clasificables
+        if nodo.get("bookkeeping") or nodo.get("name") == "Unclassifiable":
+            return "Unclassifiable"
+
+        #inserta el nombre al inicio para mantener el orden raíz > lengua
+        linaje.insert(0, str(nodo["name"]))
+
+        #sube al nodo padre
+        current_id = nodo["parent_id"]
+
+    return " > ".join(linaje)
+
+
+# %%
+#hace una copia del dataframe de México
+mexico_languages = mexico_languages.copy()
+
+#reconstruye el linaje de cada lengua
+mexico_languages["tree"] = mexico_languages["glottocode"].apply(reconstruir_linaje)
+
+#filtra las lenguas no clasificables
+df_mexico = mexico_languages[~mexico_languages["tree"].isin(["", "Unclassifiable"])].copy()
+
+#extrae la familia lingüística como el primer elemento del linaje
+df_mexico["Family"] = df_mexico["tree"].str.split(" > ").str[0]
+
+#usa glottocode como índice
+df_mexico.set_index("glottocode", inplace=True)
+
+#revisa cómo quedó
+df_mexico.head()
+
+# %% [markdown]
+# ### 2.2 Mapa de lenguas en México
+
+# %%
+#importa plotly express para crear mapas interactivos
+import plotly.express as px
+
+# %%
+#crea un mapa de las lenguas de México coloreadas por familia lingüística
+fig = px.scatter_geo(
+    df_mexico,
+    lat="latitude",
+    lon="longitude",
+    color="Family",
+    hover_name="name",
+    title="Lenguas de México por familia lingüística",
+    projection="natural earth"
+)
+
+#ajusta la visualización del mapa
+fig.update_geos(
+    showcountries=True,
+    showsubunits=True,
+    fitbounds="locations"
+)
+
+#muestra el mapa
+fig.show()
+
+# %% [markdown]
+# ### 2.3 Otro país: India
+
+# %%
+#coordenadas aproximadas de India
+min_lat_in = 6.0
+max_lat_in = 37.5
+min_long_in = 68.0
+max_long_in = 97.5
+
+#filtra las lenguas que caen dentro de la región geográfica de India
+india_languages = languages[
+    (languages["latitude"] >= min_lat_in)
+    & (languages["latitude"] <= max_lat_in)
+    & (languages["longitude"] >= min_long_in)
+    & (languages["longitude"] <= max_long_in)
+]
+
+# %%
+#hace una copia del dataframe de India
+india_languages = india_languages.copy()
+
+#reconstruye el linaje de cada lengua
+india_languages["tree"] = india_languages["glottocode"].apply(reconstruir_linaje)
+
+#filtra las lenguas no clasificables
+df_india = india_languages[~india_languages["tree"].isin(["", "Unclassifiable"])].copy()
+
+#extrae la familia lingüística como el primer elemento del linaje
+df_india["Family"] = df_india["tree"].str.split(" > ").str[0]
+
+#usa glottocode como índice
+df_india.set_index("glottocode", inplace=True)
+
+#revisa cómo quedó
+df_india.head()
+
+# %%
+#crea un mapa de las lenguas de India coloreadas por familia lingüística
+fig = px.scatter_geo(
+    df_india,
+    lat="latitude",
+    lon="longitude",
+    color="Family",
+    hover_name="name",
+    title="Lenguas de India por familia lingüística",
+    projection="natural earth"
+)
+
+#ajusta la visualización del mapa
+fig.update_geos(
+    showcountries=True,
+    showsubunits=True,
+    fitbounds="locations"
+)
+
+#muestra el mapa
+fig.show()
+
+# %% [markdown]
+# ### 2.4 Análisis
+
+# %% [markdown]
+# <div style="text-align: justify;">
+#
+# A partir de los datos de Glottolog se observa que México presenta una gran diversidad lingüística, ya que dentro de su territorio aparecen numerosas lenguas pertenecientes a varias familias distintas, entre ellas Otomanguean, Mayan, Uto-Aztecan, Totonacan y Mixe-Zoquean. El mapa muestra además que esta diversidad no se distribuye de manera uniforme, sino que se concentra especialmente en el sur y sureste del país.
+#
+# En comparación con India, México presenta una diversidad lingüística notable, pero India muestra una distribución aún más amplia y compleja debido a la gran cantidad de lenguas y familias representadas en un territorio muy extenso. Esto permite ver que México tiene una diversidad muy alta en relación con muchas regiones del mundo, aunque existen países como India donde la variedad lingüística y la densidad de lenguas también son extraordinarias.
+#
+# La zona de México que puede considerarse de mayor diversidad lingüística es el sur del país, particularmente los estados de Oaxaca, Chiapas, Puebla y regiones cercanas, ya que ahí se concentran muchas lenguas de distintas familias y variantes geográficas. Esto coincide con lo que históricamente se reconoce sobre la diversidad lingüística del sur de México.
+#
+# </div>
