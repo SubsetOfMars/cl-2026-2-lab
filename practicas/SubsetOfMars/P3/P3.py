@@ -23,9 +23,6 @@
 # ### 1.1 Preparación
 
 # %%
-# %pip install nltk pandas scikit-learn
-
-# %%
 import re
 import nltk
 import pandas as pd
@@ -187,17 +184,88 @@ resultados_comparativos.sort_values(by="Similitud_TF_IDF", ascending=False)
 # %% [markdown]
 # <div style="text-align: justify;">
 #
-# Al comparar los resultados, se observa que el documento más similar a la query varía entre los modelos Bag of Words (BoW) y TF-IDF. Esta diferencia se debe a la forma en que cada método pondera las palabras dentro del corpus.
+# Al comparar los resultados, se observa que el documento más similar a la query es el mismo tanto en Bag of Words (BoW) como en TF-IDF: Marte 1. Sin embargo, los valores de similitud no son idénticos, lo que indica que ambos modelos representan de forma distinta la relación entre la query y los documentos.
 #
-# En el caso de BoW, todas las palabras contribuyen según su frecuencia absoluta, por lo que los términos más comunes tienden a dominar la representación. Como resultado, la query puede verse influida por palabras frecuentes o compartidas entre distintos temas, incluso si no aportan un valor semántico relevante.
+# En el caso de BoW, la similitud depende directamente de la frecuencia de las palabras compartidas, por lo que los términos comunes pueden tener un peso considerable dentro de la representación. Esto hace que la query conserve una similitud relativamente alta con documentos que comparten vocabulario, incluso si algunas de esas palabras no son las más informativas.
 #
-# Por el contrario, TF-IDF introduce un mecanismo de ponderación que penaliza las palabras que aparecen en múltiples documentos y resalta aquellas que son más específicas. Esto permite que la similitud entre la query y los documentos esté determinada principalmente por términos más representativos del contenido.
+# Por su parte, TF-IDF ajusta los pesos de las palabras según su importancia dentro del corpus. Las palabras que aparecen en varios documentos reciben menos peso, mientras que los términos más específicos adquieren mayor relevancia. Por ello, aunque el documento más similar sigue siendo el mismo, los puntajes cambian y la comparación se vuelve más sensible a las palabras realmente representativas del tema.
 #
-# Además, la query construida incluye palabras de ambos temas, lo que introduce ambigüedad. En este contexto, BoW resulta más sensible a esta mezcla de vocabulario, mientras que TF-IDF logra atenuar dicho efecto al priorizar las palabras más informativas.
+# La query construida mezcla vocabulario del tema de Marte con términos asociados al estridentismo, lo que introduce ambigüedad. En este caso, ambos modelos siguen identificando correctamente un documento del tema de Marte como el más cercano, pero TF-IDF atenúa el impacto de las palabras compartidas o frecuentes y produce una ponderación más refinada.
 #
-# En conclusión, TF-IDF ofrece una representación más adecuada para tareas de recuperación de información, ya que reduce el impacto de términos frecuentes y destaca aquellos que mejor capturan el contenido semántico de los documentos.
+# En conclusión, en este corpus TF-IDF no cambió el documento más relevante, pero sí ofreció una representación más precisa de la similitud, al reducir la influencia de términos menos informativos y resaltar los más específicos.
 #
 # </div>
 
 # %% [markdown]
 # ## 2. Búsqueda de sesgos
+
+# %% [markdown]
+# ### 2.1 Carga del modelo
+
+# %%
+import gensim.downloader as gensim_api
+
+word_vectors = gensim_api.load("glove-wiki-gigaword-100")
+
+# %% [markdown]
+# ### 2.2 Comparación hombre vs mujer
+
+# %%
+print("Hombre + profesión - mujer:")
+print(word_vectors.most_similar(positive=['man', 'profession'], negative=['woman']))
+
+print("\nMujer + profesión - hombre:")
+print(word_vectors.most_similar(positive=['woman', 'profession'], negative=['man']))
+
+# %% [markdown]
+# ### 2.3 Análisis de diferencias
+
+# %% [markdown]
+# <div style="text-align: justify;">
+#
+# Al comparar los resultados obtenidos, se observan diferencias en las palabras asociadas a hombres y mujeres en relación con la noción de profesión. En el caso de "man + profession - woman", aparecen términos como practice, knowledge, skill, reputation, philosophy y discipline, que remiten a habilidades, prestigio y formación intelectual.
+#
+# En cambio, para "woman + profession - man" aparecen palabras como nursing, teaching, childbirth, teacher y educator, que se relacionan con el cuidado, la docencia y la maternidad. Aunque también aparecen términos generales como professions, practitioner y academic, la lista muestra una asociación más marcada con roles históricamente feminizados.
+#
+# Esto puede interpretarse como un reflejo de sesgo de género en los datos de entrenamiento del modelo. Los vectores no “entienden” el mundo social, sino que aprenden patrones estadísticos presentes en grandes corpus de texto. Por ello, si en esos textos ciertas profesiones o actividades aparecen con mayor frecuencia vinculadas a hombres o a mujeres, el modelo reproduce dichas asociaciones.
+#
+# </div>
+
+# %% [markdown]
+# ### 2.4 Analogías para identificar sesgo
+
+# %%
+# Analogías para explorar sesgo de género
+print("woman + doctor - man:")
+print(word_vectors.most_similar(positive=['woman', 'doctor'], negative=['man']))
+
+print("\nman + nurse - woman:")
+print(word_vectors.most_similar(positive=['man', 'nurse'], negative=['woman']))
+
+# %% [markdown]
+# ### 2.5 Explicación del sesgo
+
+# %% [markdown]
+# <div style="text-align: justify;">
+#
+# Las analogías realizadas muestran un patrón claro de sesgo de género en los embeddings. En el caso de "woman + doctor - man", el modelo devuelve palabras como nurse, physician, doctors, patient, dentist, pregnant, nursing y mother. Aunque varias pertenecen al campo médico, también aparecen términos asociados al cuidado y a la maternidad, como nurse, pregnant y mother.
+#
+# Por otro lado, en la analogía "man + nurse - woman", el modelo produce palabras como doctor, physician, surgeon, psychiatrist, technician, officer y sergeant. Aquí se observa una asociación más fuerte con profesiones de prestigio, autoridad o especialización técnica.
+#
+# En conjunto, estos resultados sugieren que el modelo reproduce asociaciones sociales presentes en los datos de entrenamiento: lo femenino aparece más vinculado al cuidado y la maternidad, mientras que lo masculino se relaciona con profesiones de mayor autoridad o estatus. Esto no significa que el modelo comprenda estas diferencias, sino que aprende patrones estadísticos del lenguaje y, al hacerlo, también hereda sesgos culturales e históricos.
+#
+# </div>
+
+# %% [markdown]
+# ### 2.6 Mitigación de sesgos 
+
+# %% [markdown]
+# <div style="text-align: justify;">
+#
+# Una estrategia consiste en revisar y balancear mejor los datos de entrenamiento, de modo que profesiones, actividades y atributos no queden desproporcionadamente asociados a un solo género.
+#
+# También pueden utilizarse técnicas de debiasing sobre los embeddings, orientadas a reducir asociaciones problemáticas entre palabras. A esto se suma la necesidad de evaluar periódicamente el modelo con pruebas específicas de sesgo, especialmente si se pretende utilizar en contextos sensibles.
+#
+# En términos generales, la mitigación no depende de una sola solución, sino de una combinación de mejores datos, evaluación constante y ajustes posteriores al entrenamiento.
+#
+# </div>
